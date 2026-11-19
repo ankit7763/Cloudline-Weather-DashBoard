@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import FeedbackBanner from './components/FeedbackBanner.jsx'
 import ForecastCard from './components/ForecastCard.jsx'
 import SunTimesCard from './components/SunTimesCard.jsx'
@@ -9,6 +10,9 @@ import CurrentWeatherCard from './components/CurrentWeatherCard.jsx'
 import useWeather from './hooks/useWeather.js'
 
 function App() {
+  const [darkMode, setDarkMode] = useState(
+    () => window.localStorage.getItem('weather-dashboard-theme') === 'dark',
+  )
   const {
     city,
     search,
@@ -22,8 +26,12 @@ function App() {
     handleSearch,
   } = useWeather()
 
+  useEffect(() => {
+    window.localStorage.setItem('weather-dashboard-theme', darkMode ? 'dark' : 'light')
+  }, [darkMode])
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800">
+    <div className={`min-h-screen bg-slate-50 text-slate-800${darkMode ? ' dark' : ''}`}>
       <div className="mx-auto flex min-h-screen max-w-[1600px] max-md:block">
         <WeatherSidebar />
 
@@ -36,12 +44,15 @@ function App() {
             onSearchChange={setSearch}
             onSubmit={handleSearch}
             loading={loading}
+            darkMode={darkMode}
+            onToggleDarkMode={() => setDarkMode((isDark) => !isDark)}
           />
 
           {!hasApiKey && (
             <FeedbackBanner>
-              Add <code>VITE_WEATHER_API_KEY</code> to a <code>.env</code> file in the
-              project root to load live weather.
+              Add <code>VITE_WEATHER_API_KEY</code> to your local <code>.env</code> file
+              for development. On Vercel, use the secret <code>OPENWEATHER_API_KEY</code>
+              environment variable.
             </FeedbackBanner>
           )}
 

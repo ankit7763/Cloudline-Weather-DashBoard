@@ -1,9 +1,12 @@
 import { getForecastDays } from '../utils/weather.js'
 
-const API_KEY = import.meta.env.VITE_WEATHER_API_KEY?.trim() ?? ''
+const USE_DIRECT_API = import.meta.env.DEV
+const API_KEY = USE_DIRECT_API
+  ? import.meta.env.VITE_WEATHER_API_KEY?.trim() ?? ''
+  : ''
 const API_BASE = 'https://api.openweathermap.org/data/2.5'
 
-export const hasWeatherApiKey = Boolean(API_KEY)
+export const hasWeatherApiKey = !USE_DIRECT_API || Boolean(API_KEY)
 
 async function requestJson(url, signal) {
   const response = await fetch(url, { signal })
@@ -23,6 +26,20 @@ async function requestJson(url, signal) {
 }
 
 export async function fetchCityWeather(city, signal) {
+  if (!USE_DIRECT_API) {
+    const response = await fetch(`/api/weather?city=${encodeURIComponent(city)}`, { signal })
+    const data = await response.json()
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new Error('We could not find that city. Check the spelling and try again.')
+      }
+      throw new Error(data.message || 'Weather data could not be loaded. Please try again.')
+    }
+
+    return data
+  }
+
   const query = encodeURIComponent(city)
   const params = `q=${query}&appid=${API_KEY}&units=metric`
   const [current, forecast] = await Promise.all([
